@@ -33,7 +33,7 @@ CREATE TABLE tbl_evento1(
 );
 
 INSERT INTO `tbl_curso` (`codigo`, `modelo`, `curso_nome`, `sigla`, `curso_titulo`, `certificadora`, `datas`, `local`, `cidade`, `fundo`, `setX`, `setY`, `setW`, `setH`) VALUES
-(1, 'A', 'evento1', 'I Evento', 'I Simpósio Siscrano de tal', 'pela empresa fulana de tal e pela instituição fulana', 'XX a XX de junho de 2018', 'Nome do Local', 'João Pessoa, 2 de junho de 2018', 'evento1.jpg', 22, 85, 252.5, 8);
+(1, 'A', 'evento1', 'I Evento', 'I Simpósio Siscrano de tal', 'pela empresa fulana de tal e pela instituição fulana', 'XX a XX de junho de 2018', 'Nome do Local', 'João Pessoa, 15 de maio de 2018', 'evento1.jpg', 22, 85, 252.5, 8);
 INSERT INTO `tbl_evento1` (`id`, `cpf`, `nome`, `termo`, `titulo`, `cargaHoraria`, `alteracao`, `validacao`, `curso_id`) VALUES
 (1, '72807630065', 'Natan Cardoso', 'participou na condição de MONITOR(A)', '', ', com carga horária de 40 horas', 'N', '', 1),
 (2, '72807630065', 'Natan Cardoso', 'participou como ouvinte do minicurso:', 'Criando um emissor de certificados', ', com carga horária de 6 horas', 'S', '', 1);
