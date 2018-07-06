@@ -11,17 +11,19 @@ require_once("class/header.php");
 ?>
 <div class="container-fluid">
 
-  <div class="row jumbotron">
-    <h1 class="display-4 text-center">Emissão de certificados</h1>
+  <div class="row jumbotron mx-auto d-block text-center">
+    <h1 class="display-2">Certificados</h1>
     <hr class="my-4">
+    <h3 class="display-4">Cursos e eventos</h3>
   </div>
 
-  <div class="row justify-content-center">
-    <div class="col-md-8">
+  <div class="row mx-auto d-block text-center">
+    <div class="col-md-12">
       <form class="form-horizontal" action="home.php" method="POST">
+        <h4>Escolha o curso ou evento:</h4>
         <div class="dropdown">
           <button class="btn btn-secondary btn-lg dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Escolha aqui o curso ou evento
+            Clique aqui para escolher 
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenu2">
         <?php if(!empty($cursos)):

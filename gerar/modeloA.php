@@ -6,56 +6,81 @@ require('../class/fpdf/alphapdf.php');
 require('../class/class.user.php');
 require('../class/functions.php');
 
-if (isset($_REQUEST['cpf']) && $_REQUEST['cpf']) {
-
+if (isset($_REQUEST['cpf']) && $_REQUEST['cpf'])
+{
 	$curso_nome = (isset($_POST['curso_nome'])) ? $_POST['curso_nome'] : '';
     $cpfx = trim($_REQUEST['cpf']);
     $cpf = str_replace(array('.','-'), '', $cpfx);
 	$tab_alunos = new USER();
 	$sql = "SELECT `sistema`.`tbl_{$curso_nome}`.*,
-	`sistema`.`tbl_curso`.* FROM `tbl_{$curso_nome}`
-	INNER JOIN `tbl_curso` 
-	ON `tbl_{$curso_nome}`.`curso_id` = `tbl_curso`.`codigo`
-	WHERE cpf LIKE :cpf
-	ORDER BY `tbl_{$curso_nome}`.`titulo` ASC";
+		`sistema`.`tbl_curso`.* FROM `tbl_{$curso_nome}`
+		INNER JOIN `tbl_curso` 
+		ON `tbl_{$curso_nome}`.`curso_id` = `tbl_curso`.`codigo`
+		WHERE cpf LIKE :cpf
+		ORDER BY `tbl_{$curso_nome}`.`titulo` ASC";
 	$stmt = $tab_alunos->runQuery($sql);
 	$stmt->bindValue(':cpf', $cpf.'%');
 	$stmt->execute();
 	$alunos = $stmt->fetchAll(PDO::FETCH_OBJ);
 }
-	$count = $stmt->rowCount();
 
-foreach ($alunos as $aluno) {
+foreach ($alunos as $aluno)
+{
+	// Instancia um objeto da classe Funcoes
+	// o qual será utilizada suas funcoes
+	$funcoes = new Funcoes();	
+	// Captura termos do certificado
+	$termo = $aluno->nome.$aluno->termo.$aluno->titulo;
+	// Gera chave encriptada desses termos
+	$validacao = $funcoes->gerarNomeArquivo($termo);
+	// Coloca tudo em maiuscula
+	$validacao = strtoupper($validacao);
+	// Atualiza a tabela colocando a chave
+	$stmtx = $tab_alunos->runQuery("UPDATE tbl_{$curso_nome} SET validacao = '{$validacao}' "
+	. "WHERE id = '{$aluno->id}'");
+	$stmtx->execute();
+	$codigo = utf8_decode("Código: ". $validacao);
+	// Texto de certificação	
+	$texto = utf8_decode("Certificamos para os devidos fins que ".$aluno->nome.", ".$aluno->termo.$aluno->titulo.", no ".$aluno->sigla." - ".$aluno->curso_titulo.", promovido ".$aluno->certificadora.", realizado nos dias ".$aluno->datas.", no CCHLA/UFPB".$aluno->cargaHoraria.".");
+	$cidade = utf8_decode($aluno->cidade);
 
-$texto = utf8_decode("Certificamos para os devidos fins que ".$aluno->nome.", ".$aluno->termo.$aluno->titulo.", no ".$aluno->sigla." - ".$aluno->curso_titulo.", promovido ".$aluno->certificadora.", realizado nos dias ".$aluno->datas.", no CCHLA/UFPB".$aluno->cargaHoraria.".");
+	$arquivox = $aluno->cpf."_".$aluno->id;
+	$arquivox = $funcoes->gerarNomeArquivo($arquivox);
+	$certificado = "../arquivos/".$arquivox.".pdf";
 
-$arquivox = $aluno->cpf."_".$aluno->id;
-$arquivox = gerarNomeArquivo($arquivox);
-$certificado = "../arquivos/".$arquivox.".pdf";
+	if (!file_exists($certificado) OR $aluno->alteracao == 'S')
+	{
+		$pdf = new AlphaPDF();
 
-if (!file_exists($certificado)) {
+		$pdf->AddPage('L');
 
-	$pdf = new AlphaPDF();
+		$pdf->SetLineWidth(1);
 
-	$pdf->AddPage('L');
+		$pdf->Image("../modelos/$aluno->curso_nome.png",0,0,297);
 
-	$pdf->SetLineWidth(1);
+		$pdf->SetAlpha(1);
 
-	$pdf->Image("../modelos/$aluno->curso_nome.png",0,0,297);
+		$pdf->SetFont('Arial', '', 13);
+		$pdf->SetTextColor(255,255,255);
+		$pdf->SetXY(3,3);
+		$pdf->MultiCell(50, 5, $codigo, '', 'J', 0);
 
-	$pdf->SetAlpha(1);
+		$pdf->SetFont('Arial', '', 16);
+		$pdf->SetXY($aluno->setX,$aluno->setY);
+		$pdf->SetTextColor(0,0,0);
+		$pdf->MultiCell($aluno->setW, $aluno->setH, $texto, '', 'J', 0);
+		$pdf->MultiCell($aluno->setW, $aluno->setH, $cidade, '', 'R', 0);
 
-	$pdf->SetFont('Arial', '', 14);
+		$pdf->Output($certificado,'F');
 
-	$pdf->SetXY($aluno->setX,$aluno->setY);
-	$pdf->MultiCell($aluno->setW, $aluno->setH, $texto, '', 'J', 0);
-
-	$pdf->Output($certificado,'F');
-}
-$nomeAluno   = $aluno->nome;
-$cursoSigla  = $aluno->sigla;
-$cursoTitulo = $aluno->curso_titulo;
-$cursoDatas  = $aluno->datas;
+		$stmtx = $tab_alunos->runQuery("UPDATE tbl_{$curso_nome} SET alteracao = 'N' "
+		. "WHERE id = '{$aluno->id}'");
+		$stmtx->execute();
+	}
+	$nomeAluno   = $aluno->nome;
+	$cursoSigla  = $aluno->sigla;
+	$cursoTitulo = $aluno->curso_titulo;
+	$cursoDatas  = $aluno->datas;
 }//endforeach
 ob_end_flush();
 
@@ -88,8 +113,9 @@ require_once("../class/header.php");
 						<th>Carga Horária</th>
 					</tr>
 					<?php foreach($alunos as $aluno):
+						$funcoes = new Funcoes();
 						$arquivo = $aluno->cpf."_".$aluno->id;
-						$arquivo = gerarNomeArquivo($arquivo) . ".pdf";
+						$arquivo = $funcoes->gerarNomeArquivo($arquivo) . ".pdf";
 						?>
 						<tr>
 							<td>
@@ -127,18 +153,17 @@ require_once("../class/header.php");
 				$error[] = "Desculpe, não foi encontrado nenhum registro.";
 			endif;
 
-			if(isset($error))
-			{ ?>
+			if(isset($error)) { ?>
 				<div class="jumbotron" style="background: none !important">
-			 	<?php foreach($error as $error)
-			 	{ ?>
-
-                     	<div class="alert alert-danger">
-                        	<i class="glyphicon glyphicon-warning-sign"></i> &nbsp; <?php echo $error; ?>
-                     	</div>
+			 	<?php foreach($error as $error) { ?>
+					<div class="alert alert-danger">
+						<i class="glyphicon glyphicon-warning-sign"></i> &nbsp; <?php echo $error; ?>
+					</div>
                 <?php } ?>
             	</div>
-			<?php }
-			?>
-
+			<?php } ?>
+			
+		</div>
+	</div>
+</div>
 <?php require_once("../class/footer.php");
